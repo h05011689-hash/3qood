@@ -1,2 +1,1 @@
-pyTelegramBotAPI
-groq
+python-telegram-bot
