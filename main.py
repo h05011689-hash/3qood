@@ -15,7 +15,7 @@ from telethon import TelegramClient, errors
 # الإعدادات
 # ================================================================
 API_TOKEN         = '8502404654:AAEnJitLJwbvzRSJ1ZaaKufm01o0pEzVDQA'
-ADMIN_USERNAME    = 'm_h7_e'
+ADMIN_USERNAME    = 'kkcofg'
 TELETHON_API_ID   = 34674538
 TELETHON_API_HASH = '633785a3287407336e4c7421307fcbd8'
 
