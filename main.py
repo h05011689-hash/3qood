@@ -21,7 +21,7 @@ TELETHON_API_ID   = 34674538
 TELETHON_API_HASH = '633785a3287407336e4c7421307fcbd8'
 
 ACTIVATIONS_CHANNEL = '@ab_osv'
-SUBSCRIBE_CHANNEL   = '@A_7_XJ'  # قناة الاشتراك الإجباري
+SUBSCRIBE_CHANNEL   = '@A_7_XJ'
 
 for folder in ['sessions', 'sessions_good', 'sessions_spam', 'sessions_old', 'uploaded_files']:
     os.makedirs(folder, exist_ok=True)
@@ -204,21 +204,21 @@ async def send_subscribe_message(chat_id, user_id):
         "بعد الاشتراك، اضغط على زر التحقق.",
         reply_markup=kb)
 
-# --- القائمة الرئيسية (معدلة: ألوان حمراء وخضراء فقط) ---
+# --- ⭐ القائمة الرئيسية المعدلة (الأيمن أحمر، الأيسر أخضر، شحن رصيد أزرق) ---
 def get_main_markup(username):
     buttons = [
-        [colored_button("🛒 شراء حساب", "buy_account", "danger"),
-         colored_url_button("📞 الدعم الفني", "https://t.me/Super_Zyrex1", "success")],
+        [colored_button("🛒 شراء حساب", "buy_account", "success"),
+         colored_url_button("📞 الدعم الفني", "https://t.me/Super_Zyrex1", "danger")],
         [colored_url_button("👥 الوكلاء", "https://t.me/Super_Zyrex1", "success"),
          colored_url_button("📢 قناة التفعيلات", "https://t.me/ab_osv", "danger")],
         [colored_button("💰 رصيدي", "my_balance", "success"),
          colored_url_button("👨‍💻 المطورين", "https://t.me/iiiiiiii_iiiii", "danger")],
-        [colored_button("🔗 إحالة", "referral_link", "danger"),
-         colored_button("📦 مشترياتي", "my_purchases", "success")],
+        [colored_button("🔗 إحالة", "referral_link", "success"),
+         colored_button("📦 مشترياتي", "my_purchases", "danger")],
     ]
     if username == ADMIN_USERNAME:
         buttons.append([colored_button("⚙️ لوحة التحكم للمطور", "admin_panel", "danger")])
-    buttons.append([colored_button("💳 شحن رصيد", "add_balance", "danger")])  # شحن رصيد أحمر
+    buttons.append([colored_button("💳 شحن رصيد", "add_balance", "primary")])  # أزرق
     return colored_inline_keyboard(*buttons)
 
 def get_admin_markup():
@@ -232,6 +232,9 @@ def get_admin_markup():
         [colored_button("📊 إحصائيات", "admin_stats", "danger")],
         [colored_button("🔙 رجوع للقائمة", "main_menu", "success")]
     )
+
+# (باقي الدوال كما هي دون تغيير، تم تضمينها كلها سابقاً. الكود أعلاه هو التعديل المطلوب فقط للقائمة الرئيسية.)
+# يمكنك نسخ باقي الكود من آخر نسخة كاملة أرسلتها، مع استبدال دالة get_main_markup فقط بهذه النسخة.
 
 # ================================================================
 # SpamBot & فحص
