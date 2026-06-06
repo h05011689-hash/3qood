@@ -1120,23 +1120,47 @@ async def process_successful_payment(message: types.Message):
     )
 
 # شحن عبر آسيا (بدون كلمة "اسيا" في السؤال، مع دينار)
+# ---------- شحن عبر آسيا (الجزء المعدل) ----------
+
 @dp.callback_query_handler(text="pay_asia")
 async def pay_asia_start(call: types.CallbackQuery):
     if not await is_subscribed(call.from_user.id): return await call.answer("⚠️ اشترك أولاً", show_alert=True)
     if not is_user_verified(call.from_user.id): return await call.answer("يرجى إكمال التحقق البشري أولاً.", show_alert=True)
+    
+    text = (
+        "شحن الرصيد عبر آسيا سيل:\n"
+        "حوّل إلى الرقم: 07705157022\n"
+        "الحد الأدنى: 1000 دينار.\n"
+        "اضغط على الزر أدناه لتأكيد البيانات."
+    )
+    kb = colored_inline_keyboard([
+        colored_button("✅ تأكيد البيانات", "confirm_asia_data", "success"),
+        colored_button("🔙 رجوع", "add_balance", "danger")
+    ])
+    await call.message.edit_text(text, reply_markup=kb)
+
+
+@dp.callback_query_handler(text="confirm_asia_data")
+async def confirm_asia_data(call: types.CallbackQuery):
+    # انتقل إلى إدخال المبلغ
     await call.message.edit_text(
-        "🌏 <b>شحن عبر آسيا</b>\n\nأدخل المبلغ الذي تريد شحنه (بالدينار):\nمثال: <code>1000</code>",
+        "أدخل المبلغ الذي تريد شحنه (بالدينار):\nمثال: <code>1000</code>",
         reply_markup=colored_inline_keyboard([colored_button("🔙 رجوع", "add_balance", "danger")])
     )
     await AsiaTopUpStates.waiting_for_amount.set()
 
+
+# دالة استقبال المبلغ (تبقى كما هي، لكن مع السماح من 1 إلى 500000)
 @dp.message_handler(state=AsiaTopUpStates.waiting_for_amount)
 async def asia_amount_entered(message: types.Message, state: FSMContext):
     if not is_user_verified(message.from_user.id): return await message.answer("يرجى إكمال التحقق البشري أولاً.")
     try:
         amount = float(message.text)
-        if amount <= 0: raise ValueError
-    except ValueError: return await message.answer("❌ أرسل مبلغاً صحيحاً موجباً.")
+        if amount <= 0 or amount > 500000:  # الحد الأقصى اختياري، يمكن إزالته
+            raise ValueError
+    except ValueError:
+        return await message.answer("❌ أرسل مبلغاً صحيحاً (1 - 500000 دينار).")
+    
     await state.update_data(amount=amount)
     await message.answer(
         f"💵 <b>المبلغ المطلوب:</b> {amount:.2f} دينار\n\n"
