@@ -204,7 +204,7 @@ async def send_subscribe_message(chat_id, user_id):
         "بعد الاشتراك، اضغط على زر التحقق.",
         reply_markup=kb)
 
-# --- ⭐ القائمة الرئيسية المعدلة (الأيمن أحمر، الأيسر أخضر، شحن رصيد أزرق) ---
+# --- القائمة الرئيسية (اليمين أحمر، اليسار أخضر، شحن رصيد أزرق) ---
 def get_main_markup(username):
     buttons = [
         [colored_button("🛒 شراء حساب", "buy_account", "success"),
@@ -218,7 +218,7 @@ def get_main_markup(username):
     ]
     if username == ADMIN_USERNAME:
         buttons.append([colored_button("⚙️ لوحة التحكم للمطور", "admin_panel", "danger")])
-    buttons.append([colored_button("💳 شحن رصيد", "add_balance", "primary")])  # أزرق
+    buttons.append([colored_button("💳 شحن رصيد", "add_balance", "primary")])
     return colored_inline_keyboard(*buttons)
 
 def get_admin_markup():
@@ -232,9 +232,6 @@ def get_admin_markup():
         [colored_button("📊 إحصائيات", "admin_stats", "danger")],
         [colored_button("🔙 رجوع للقائمة", "main_menu", "success")]
     )
-
-# (باقي الدوال كما هي دون تغيير، تم تضمينها كلها سابقاً. الكود أعلاه هو التعديل المطلوب فقط للقائمة الرئيسية.)
-# يمكنك نسخ باقي الكود من آخر نسخة كاملة أرسلتها، مع استبدال دالة get_main_markup فقط بهذه النسخة.
 
 # ================================================================
 # SpamBot & فحص
@@ -468,7 +465,7 @@ async def gift_balance_get_amount(message: types.Message, state: FSMContext):
     await state.finish()
 
 # ================================================================
-# إدارة الأقسام + إضافة حسابات (فحص .session ورقم)
+# إدارة الأقسام + إضافة حسابات (فحص .session ورقم) - باختصار
 # ================================================================
 @dp.callback_query_handler(text="admin_manage_cats")
 async def admin_manage_cats(call: types.CallbackQuery):
@@ -895,7 +892,7 @@ async def confirm_login_callback(call: types.CallbackQuery):
         await call.message.edit_text("✨ <b>تم تفعيل الحساب بنجاح. شكراً! 🎉</b>")
 
 # ================================================================
-# شحن الرصيد (النجوم + آسيا) - 1 نجمة = 0.1 دولار
+# شحن الرصيد (النجوم + آسيا) - تم تصحيح قيمة النجمة إلى 0.01 دولار
 # ================================================================
 @dp.callback_query_handler(text="add_balance")
 async def add_balance_choose(call: types.CallbackQuery):
@@ -914,7 +911,7 @@ async def ask_stars(call: types.CallbackQuery):
     await call.message.edit_text(
         "⭐ <b>شحن بالنجوم</b>\n\n"
         "أدخل عدد النجوم (1 — 10000):\n"
-        "<i>كل نجمة = $0.10  (10 نجوم = $1.00)</i>",
+        "<i>كل نجمة = $0.01  (10 نجوم = $0.10)</i>",
         reply_markup=m
     )
     await PaymentStates.waiting_for_stars.set()
@@ -925,7 +922,7 @@ async def process_stars(message: types.Message, state: FSMContext):
     if not message.text.isdigit() or not (1 <= int(message.text) <= 10000):
         return await message.answer("❌ أدخل رقم بين 1 و 10000.")
     amount = int(message.text)
-    added_dollars = amount * 0.1
+    added_dollars = amount * 0.01  # تم التصحيح
     await bot.send_invoice(
         chat_id=message.chat.id,
         title="شحن رصيد ZZ",
@@ -944,7 +941,7 @@ async def process_pre_checkout(pre_checkout_query: types.PreCheckoutQuery):
 @dp.message_handler(content_types=types.ContentType.SUCCESSFUL_PAYMENT)
 async def process_successful_payment(message: types.Message):
     stars = message.successful_payment.total_amount
-    added = stars * 0.1
+    added = stars * 0.01  # تم التصحيح
     new_bal = get_user_balance(message.from_user.id) + added
     cursor.execute("UPDATE users SET balance=? WHERE id=?", (new_bal, message.from_user.id))
     conn.commit()
