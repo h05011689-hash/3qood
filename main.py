@@ -22,7 +22,7 @@ TELETHON_API_ID   = 34674538
 TELETHON_API_HASH = '633785a3287407336e4c7421307fcbd8'
 
 ACTIVATIONS_CHANNEL = '@ab_osv'
-SUBSCRIBE_CHANNELS  = ['@Kaido_TG_KING', '@ab_osv']  # قناتا الاشتراك الإجباري
+SUBSCRIBE_CHANNELS  = ['@Kaido_TG_KING', '@ab_osv']
 
 ADMIN_ID = None
 
@@ -254,12 +254,11 @@ def build_captcha_markup(options):
         buttons.append([colored_button(opt, f"captcha_{opt}", colors[i % len(colors)])])
     return colored_inline_keyboard(*buttons)
 
-# --- القائمة الرئيسية (الأيمن أحمر، الأيسر أخضر، شحن رصيد أزرق) ---
+# --- القائمة الرئيسية ---
 def get_main_markup(username):
     buttons = [
         [colored_button("🛒 شراء حساب", "buy_account", "success"),
          colored_url_button("📞 الدعم الفني", "https://t.me/Super_Zyrex1", "danger")],
-        # زر الوكلاء أصبح callback لعرض رسالة الوكلاء
         [colored_button("👥 الوكلاء", "agents_menu", "success"),
          colored_url_button("📢 قناة التفعيلات", "https://t.me/ab_osv", "danger")],
         [colored_button("💰 رصيدي", "my_balance", "success"),
@@ -500,7 +499,7 @@ async def my_purchases(call: types.CallbackQuery):
         reply_markup=colored_inline_keyboard([colored_button("🔙 رجوع", "main_menu", "danger")])
     )
 
-# --- قسم الوكلاء (جديد) ---
+# --- قسم الوكلاء ---
 @dp.callback_query_handler(text="agents_menu")
 async def agents_menu(call: types.CallbackQuery):
     if not await is_subscribed(call.from_user.id): return await call.answer("⚠️ اشترك أولاً", show_alert=True)
@@ -517,7 +516,7 @@ async def agents_menu(call: types.CallbackQuery):
     await call.message.edit_text(text, reply_markup=kb)
 
 # ================================================================
-# لوحة المطور
+# لوحة المطور (بما في ذلك إدارة الأقسام مع الحذف)
 # ================================================================
 @dp.callback_query_handler(text="admin_panel", state="*")
 async def admin_panel(call: types.CallbackQuery, state: FSMContext):
@@ -586,20 +585,8 @@ async def gift_balance_get_amount(message: types.Message, state: FSMContext):
     )
     await state.finish()
 
-# (باقي دوال الإدارة والشراء والشحن تبقى كما هي مع إضافة التحقق في بدايتها، وهي مدمجة بالكامل في النسخ السابقة وسنكتفي بالعناصر الأساسية)
-# ... سنشير إلى أن جميع الدوال التالية موجودة ومطابقة للنسخة الكاملة السابقة مع إضافة فحص is_subscribed و is_user_verified في بدايتها
-# ونظرًا لطول الكود سنرفق الملف الكامل الآن والذي يحتوي على كل الدوال.
-
-# سيتم إكمال الكود بالدوال الكاملة (إدارة الأقسام، الفحص، الشراء، الشحن) كما في النسخة الأخيرة،
-# مع إضافة التعديلات أعلاه، وإدراجها في ملف واحد نهائي.
-
-# نظرًا لأن المساحة محدودة، سأقوم بتضمين الكود الكامل النهائي بعد هذا التعليق مباشرة.
-
-# ... (يتبع الكود الكامل)
-# (لتجنب التكرار، سنعرض الكود النهائي الذي يجمع جميع الدوال)
-
 # ================================================================
-# إدارة الأقسام
+# إدارة الأقسام (مع خيار الحذف)
 # ================================================================
 @dp.callback_query_handler(text="admin_manage_cats")
 async def admin_manage_cats(call: types.CallbackQuery):
@@ -634,14 +621,44 @@ async def cat_manage(call: types.CallbackQuery):
     m = colored_inline_keyboard(
         [colored_button("📲 إضافة رقم (تسجيل دخول + فحص)", f"addcat_phone_{cat_id}", "danger")],
         [colored_button("📂 إضافة .session (فحص)", f"addcat_session_{cat_id}", "success")],
+        [colored_button("🗑️ حذف القسم", f"delete_cat_{cat_id}", "primary")],
         [colored_button("🔙 رجوع للأقسام", "admin_manage_cats", "danger")]
     )
     await call.message.edit_text(
         f"📁 <b>قسم:</b> {cat[0]}\n"
         f"🔢 البادئة: <code>{cat[1]}</code> | 💵 السعر: <code>${cat[2]:.2f}</code>\n"
         f"🟢 الحسابات المتاحة: <b>{count}</b>\n\n"
-        f"اختر طريقة إضافة حساب:", reply_markup=m
+        f"اختر العملية:", reply_markup=m
     )
+
+@dp.callback_query_handler(lambda c: c.data.startswith('delete_cat_'))
+async def delete_cat_confirm(call: types.CallbackQuery):
+    if not is_user_verified(call.from_user.id): return await call.answer("يرجى إكمال التحقق البشري أولاً.", show_alert=True)
+    if call.from_user.username != ADMIN_USERNAME: return await call.answer("⛔", show_alert=True)
+    cat_id = int(call.data.split('_')[2])
+    cursor.execute("SELECT name FROM categories WHERE id=?", (cat_id,))
+    cat = cursor.fetchone()
+    if not cat: return await call.answer("❌ القسم غير موجود.", show_alert=True)
+    kb = colored_inline_keyboard([
+        colored_button("✅ نعم، احذف", f"confirm_delete_cat_{cat_id}", "danger"),
+        colored_button("❌ إلغاء", f"cat_manage_{cat_id}", "success")
+    ])
+    await call.message.edit_text(
+        f"⚠️ <b>هل أنت متأكد من حذف قسم \"{cat[0]}\"؟</b>\n"
+        f"سيتم حذف جميع الحسابات المرتبطة به نهائياً.",
+        reply_markup=kb
+    )
+
+@dp.callback_query_handler(lambda c: c.data.startswith('confirm_delete_cat_'))
+async def confirm_delete_cat(call: types.CallbackQuery):
+    if not is_user_verified(call.from_user.id): return await call.answer("يرجى إكمال التحقق البشري أولاً.", show_alert=True)
+    if call.from_user.username != ADMIN_USERNAME: return await call.answer("⛔", show_alert=True)
+    cat_id = int(call.data.split('_')[2])
+    cursor.execute("DELETE FROM accounts WHERE country_id=?", (cat_id,))
+    cursor.execute("DELETE FROM categories WHERE id=?", (cat_id,))
+    conn.commit()
+    await call.message.edit_text("✅ <b>تم حذف القسم وجميع حساباته بنجاح.</b>",
+                                 reply_markup=colored_inline_keyboard([colored_button("🔙 رجوع", "admin_manage_cats", "success")]))
 
 # ================================================================
 # إضافة رقم لقسم (فحص تلقائي)
@@ -728,9 +745,7 @@ async def _addcat_do_check(message, state, client):
         active_clients.pop(message.from_user.id, None)
         await message.answer(f"❌ خطأ: {e}"); await state.finish()
 
-# ================================================================
-# إضافة .session لقسم (فحص تلقائي)
-# ================================================================
+# دوال .session للقسم (فحص تلقائي) - اختصار
 @dp.callback_query_handler(lambda c: c.data.startswith('addcat_session_'))
 async def addcat_session_start(call: types.CallbackQuery, state: FSMContext):
     if not is_user_verified(call.from_user.id): return await call.answer("يرجى إكمال التحقق البشري أولاً.", show_alert=True)
@@ -1104,13 +1119,13 @@ async def process_successful_payment(message: types.Message):
         f"💰 رصيدك الجديد: ${new_bal:.2f}"
     )
 
-# شحن عبر آسيا (نظام يدوي مع سكرين شوت)
+# شحن عبر آسيا (بدون كلمة "اسيا" في السؤال، مع دينار)
 @dp.callback_query_handler(text="pay_asia")
 async def pay_asia_start(call: types.CallbackQuery):
     if not await is_subscribed(call.from_user.id): return await call.answer("⚠️ اشترك أولاً", show_alert=True)
     if not is_user_verified(call.from_user.id): return await call.answer("يرجى إكمال التحقق البشري أولاً.", show_alert=True)
     await call.message.edit_text(
-        "🌏 <b>شحن عبر آسيا</b>\n\nأدخل المبلغ الذي تريد شحنه (بالدينار الاسيا):\nمثال: <code>1000</code>",
+        "🌏 <b>شحن عبر آسيا</b>\n\nأدخل المبلغ الذي تريد شحنه (بالدينار):\nمثال: <code>1000</code>",
         reply_markup=colored_inline_keyboard([colored_button("🔙 رجوع", "add_balance", "danger")])
     )
     await AsiaTopUpStates.waiting_for_amount.set()
