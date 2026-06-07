@@ -15,14 +15,14 @@ from telethon import TelegramClient, errors
 # ================================================================
 # الإعدادات
 # ================================================================
-API_TOKEN         = '8990468137:AAEljfy0vWa6YmTZ9Xa0n1c2Jpy8BcEp4RY'
-ADMIN_USERNAME    = 'iiiiiiii_iiiii'
+API_TOKEN         = '8795620005:AAFgcBhNzEF6IoCrMg3lE3EdnL4UUIAkLm0'
+ADMIN_USERNAME    = 'levil_0'
 BOT_USERNAME      = 'ooasabot'
 TELETHON_API_ID   = 34674538
 TELETHON_API_HASH = '633785a3287407336e4c7421307fcbd8'
 
 ACTIVATIONS_CHANNEL = '@ab_osv'
-SUBSCRIBE_CHANNELS  = ['@Kaido_TG_KING', '@ab_osv']
+SUBSCRIBE_CHANNELS  = []
 
 ADMIN_ID = None
 
