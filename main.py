@@ -1,14 +1,17 @@
 import logging
 import io
 import requests
+import asyncio
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.bot.api import TelegramAPIServer
 
 # 🛑 توكن البوت الخاص بك جاهز ومثبت
 BOT_TOKEN = "8813517184:AAFVc8wiWbUHsAHKDQuF6w4DzghUHUOzHyo"
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=BOT_TOKEN)
+# ضبط إعدادات الاتصال لتفادي الـ Bad Gateway على السيرفرات الخارجية
+bot = Bot(token=BOT_TOKEN, timeout=40) 
 dp = Dispatcher(bot)
 
 @dp.message_handler(commands=['start'])
@@ -48,7 +51,7 @@ async def handle_image(message: types.Message):
             "fileToUpload": ("avatar.jpg", image_bytes.read(), "image/jpeg")
         }
         
-        response = requests.post(upload_url, data=payload, files=files, timeout=20)
+        response = requests.post(upload_url, data=payload, files=files, timeout=30)
         
         if response.status_code == 200:
             raw_url = response.text.strip()
@@ -59,7 +62,6 @@ async def handle_image(message: types.Message):
             else:
                 direct_url = raw_url
             
-            # النص الجديد والمطلوب فقط بالملي
             text = (
                 f"✅ **تم الرفع بنجاح!**\n\n"
                 f"🔗 `{direct_url}`\n\n"
@@ -68,11 +70,12 @@ async def handle_image(message: types.Message):
             )
             await status_msg.edit_text(text, parse_mode="Markdown")
         else:
-            await status_msg.edit_text(f"❌ حدثت مشكلة في السيرفر. كود الرد: {response.status_code}")
+            await status_msg.edit_text(f"❌ حدثت مشكلة في السيرفر الخارجي. كود الرد: {response.status_code}")
             
     except Exception as e:
         logging.error(f"Error: {e}")
         await status_msg.edit_text("❌ حدث خطأ غير متوقع أثناء معالجة الصورة.")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    # تخطي الأخطاء المؤقتة للشبكة أثناء تشغيل البوت على الاستضافة
+    executor.start_polling(dp, skip_updates=True, timeout=20)
